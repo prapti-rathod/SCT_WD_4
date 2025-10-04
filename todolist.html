@@ -1,0 +1,235 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <title>Creative To-Do App</title>
+    <style>
+        /* General Page Styling */
+        body {
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #c966ea, #764ba2);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        }
+
+        .container {
+        margin-top: 40px;
+        width: 450px;
+        background: #a85c5cc5;
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.532);
+        animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+        from {opacity: 0; transform: translateY(20px);}
+        to {opacity: 1; transform: translateY(0);}
+        }
+
+        h1 {
+        text-align: center;
+        font-size: 2em;
+        margin-bottom: 15px;
+        color: #f7cb65;
+        }
+
+        /* Form Styling */
+        .task-input {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        }
+
+        input, select, button {
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        outline: none;
+        }
+
+        input[type="text"] {
+        width: 95.3%;
+        }
+
+        button {
+        background: #ffd369;
+        color: #222;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+        }
+
+        button:hover {
+        background: #ffb347;
+        transform: scale(1.05);
+        }
+
+        /* Task List */
+        .task-list {
+        margin-top: 20px;
+        list-style: none;
+        padding: 0;
+        max-height: 300px;
+        overflow-y: auto;
+        }
+
+        .task-item {
+        background: #7652526f;
+        margin-bottom: 10px;
+        padding: 12px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: 0.3s;
+        }
+
+        .task-item.completed {
+        background: #a26ab3;
+        text-decoration: line-through;
+        color: #ddd;
+        }
+
+        .task-details {
+        flex: 1;
+        }
+
+        .task-title {
+        font-weight: bold;
+        font-size: 16px;
+        }
+
+        .task-meta {
+        font-size: 12px;
+        color: #aaa;
+        }
+
+        .task-actions button {
+        margin-left: 5px;
+        padding: 5px 8px;
+        font-size: 12px;
+        border-radius: 6px;
+        }
+
+        .search-bar {
+        margin-top: 15px;
+        display: flex;
+        justify-content: center;
+        }
+
+        .search-bar input {
+        width: 100%;
+        }
+
+    </style>
+    </head>
+    <body>
+    <div class="container">
+        <h1>✨ My To-Do App</h1>
+        <div class="task-input">
+        <input type="text" id="taskTitle" placeholder="Task title...">
+        <input type="datetime-local" id="taskDateTime">
+        <select id="taskList">
+            <option value="General">General</option>
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+        </select>
+        <button onclick="addTask()">Add Task</button>
+        </div>
+
+        <div class="search-bar">
+        <input type="text" id="searchTask" placeholder="🔍 Search task..." onkeyup="searchTask()">
+        </div>
+
+        <ul class="task-list" id="taskListContainer"></ul>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+        // Render tasks on page load
+        window.onload = renderTasks;
+
+        function addTask() {
+        const title = document.getElementById("taskTitle").value.trim();
+        const dateTime = document.getElementById("taskDateTime").value;
+        const list = document.getElementById("taskList").value;
+
+        if (title === "") {
+            alert("Please enter a task title!");
+            return;
+        }
+
+        tasks.push({ title, dateTime, list, completed: false });
+        saveTasks();
+        renderTasks();
+        document.getElementById("taskTitle").value = "";
+        document.getElementById("taskDateTime").value = "";
+        }
+
+        function renderTasks() {
+        const container = document.getElementById("taskListContainer");
+        container.innerHTML = "";
+        tasks.forEach((task, index) => {
+            const li = document.createElement("li");
+            li.className = "task-item " + (task.completed ? "completed" : "");
+            
+            li.innerHTML = `
+            <div class="task-details">
+                <div class="task-title">${task.title}</div>
+                <div class="task-meta">${task.list} | ${task.dateTime || "No deadline"}</div>
+            </div>
+            <div class="task-actions">
+                <button onclick="toggleComplete(${index})">${task.completed ? "Undo" : "Done"}</button>
+                <button onclick="editTask(${index})">Edit</button>
+                <button onclick="deleteTask(${index})">Delete</button>
+            </div>
+            `;
+            container.appendChild(li);
+        });
+        }
+
+        function toggleComplete(index) {
+        tasks[index].completed = !tasks[index].completed;
+        saveTasks();
+        renderTasks();
+        }
+
+        function editTask(index) {
+        const newTitle = prompt("Edit task:", tasks[index].title);
+        if (newTitle !== null && newTitle.trim() !== "") {
+            tasks[index].title = newTitle.trim();
+        }
+        saveTasks();
+        renderTasks();
+        }
+
+        function deleteTask(index) {
+        if (confirm("Delete this task?")) {
+            tasks.splice(index, 1);
+            saveTasks();
+            renderTasks();
+        }
+        }
+
+        function searchTask() {
+        const searchValue = document.getElementById("searchTask").value.toLowerCase();
+        document.querySelectorAll(".task-item").forEach(item => {
+            const title = item.querySelector(".task-title").innerText.toLowerCase();
+            item.style.display = title.includes(searchValue) ? "flex" : "none";
+        });
+        }
+
+        function saveTasks() {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        }
+    </script>
+    </body>
+    </html>
